@@ -6,20 +6,14 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://example.com">
-  <title>Redis源码分析（一） | Hexo</title>
+  <title>Tag: redis | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="零、前言一、基础数据结构1.1 简单动态字符串 SDSRedis中的字符串并非C结构中的字符串，它是二进制安全的字符串（不会被特殊字符（\0）隔断），sds中包含长度信息来标识字符串的长度。  各数据结构的存储方式：    数据结构 存储方式 说明    string int 字符串长度小于等于20且能转成整数    raw 字符串长度大于44    embstr 字符串长度小于等于44   ha">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Redis源码分析（一）">
-<meta property="og:url" content="http://example.com/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/tags/redis/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="零、前言一、基础数据结构1.1 简单动态字符串 SDSRedis中的字符串并非C结构中的字符串，它是二进制安全的字符串（不会被特殊字符（\0）隔断），sds中包含长度信息来标识字符串的长度。  各数据结构的存储方式：    数据结构 存储方式 说明    string int 字符串长度小于等于20且能转成整数    raw 字符串长度大于44    embstr 字符串长度小于等于44   ha">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2022-02-27T13:17:17.000Z">
-<meta property="article:modified_time" content="2022-03-01T13:41:57.137Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="数据结构">
-<meta property="article:tag" content="redis">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -156,266 +150,36 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-Redis源码分析（一）" class="article article-type-post " itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
+            
   
-    <h1 class="article-title" itemprop="name">
-      Redis源码分析（一）
+  
+    
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2022" class="archive-year">2022</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
+</a>
+        </div>
+    	 
+  
+    <h1 itemprop="name">
+      <a class="archive-article-title" href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/">Redis源码分析（一）</a>
     </h1>
   
 
-        
-        <a href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="零、前言"><a href="#零、前言" class="headerlink" title="零、前言"></a>零、前言</h2><h2 id="一、基础数据结构"><a href="#一、基础数据结构" class="headerlink" title="一、基础数据结构"></a>一、基础数据结构</h2><h3 id="1-1-简单动态字符串-SDS"><a href="#1-1-简单动态字符串-SDS" class="headerlink" title="1.1 简单动态字符串 SDS"></a>1.1 简单动态字符串 SDS</h3><p>Redis中的字符串并非C结构中的字符串，它是二进制安全的字符串（不会被特殊字符（\0）隔断），sds中包含长度信息来标识字符串的长度。 </p>
-<p>各数据结构的存储方式：</p>
-<table>
-<thead>
-<tr>
-<th align="center">数据结构</th>
-<th align="center">存储方式</th>
-<th align="center">说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">string</td>
-<td align="center">int</td>
-<td align="center">字符串长度小于等于20且能转成整数</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">raw</td>
-<td align="center">字符串长度大于44</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">embstr</td>
-<td align="center">字符串长度小于等于44</td>
-</tr>
-<tr>
-<td align="center">hash</td>
-<td align="center">dict字典</td>
-<td align="center">节点数量大于512且字符串长度大于64</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">ziplist压缩链表</td>
-<td align="center">节点数量小于等于512（hash-max-ziplist-entries）或者字符串长度小于等于64</td>
-</tr>
-<tr>
-<td align="center">list</td>
-<td align="center">quicklist双向链表</td>
-<td align="center">quicklist的节点存储的就是压缩列表</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">ziplist压缩列表</td>
-<td align="center">间接使用</td>
-</tr>
-<tr>
-<td align="center">set</td>
-<td align="center">intset整数数组</td>
-<td align="center">元素都为整数且节点数量小于等于512（set-max-intset-entries）</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">dict字典</td>
-<td align="center">元素有一个不为整数或者数量大于512</td>
-</tr>
-<tr>
-<td align="center">zset</td>
-<td align="center">skiplist</td>
-<td align="center">数量大于128或者有一个字符串长度大于64</td>
-</tr>
-<tr>
-<td align="center"></td>
-<td align="center">ziplist</td>
-<td align="center">子节点数量小于等于128（zset-max-ziplist-entries）且字符串长度小于等于64（zset-max-ziplist-entries）</td>
-</tr>
-</tbody></table>
-<p>更换存储方式用于平衡运行时间和存储效率。</p>
-<p>操作相当于unordered_map&lt;string, string&gt;</p>
-<p>unordered_map&lt;key, value&gt;</p>
-<p>常见指令与应用：</p>
-<p><code>set key val</code> 设置键值对</p>
-<p><code>get key</code> 获得键值</p>
-<p><code>incr key</code> val++</p>
-<p><code>incrby key increment</code> val += increment</p>
-<p><code>decr key</code> val–</p>
-<p><code>decrby key decrement</code> val -= decrement</p>
-<p><code>setnx key value</code> 当key存在，不进行任何操作；否则创建键值对</p>
-<p><code>del key</code> 删除简直对</p>
-<ul>
-<li>存储对象</li>
-</ul>
-<p><code>set role:1001 &#39;&#123;[&quot;name&quot;]:&quot;mark&quot;,[&quot;sex&quot;]:&quot;male&quot;,[&quot;age&quot;]:30&#125;&#39;</code> 保存为json字段</p>
-<ul>
-<li>分布式锁</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 获取锁</span><br><span class="line">setnx lock userid</span><br><span class="line">// 释放锁</span><br><span class="line">del lock</span><br></pre></td></tr></table></figure>
-
-<h3 id="1-2-List"><a href="#1-2-List" class="headerlink" title="1.2 List"></a>1.2 List</h3><p>操作相当于unordered_map&lt;string, list<string>&gt;</p>
-<p>unordered_map&lt;key, list<value>&gt;</p>
-<p>常见指令与应用：</p>
-<p><code>lpush key val [val ...]</code> 从队列的左侧入队一个或者多个元素</p>
-<p><code>lpop key</code> 从队列的左侧弹出一个元素</p>
-<p><code>rpush key val [val ...]</code> 从队列右侧</p>
-<p><code>rpop key</code></p>
-<p><code>lrange key start end</code> 返回从队列的start 和 end之间的元素</p>
-<p><code>lrem key count value</code> 从存与key的列表里移除前 count 次出现的值为value的键值对</p>
-<p><code>brpop key timeout</code> 它是rpop的阻塞版本，在给定的list无法弹出任何元素的时候阻塞链接</p>
-<ul>
-<li>栈（先进后出 First In Last Out）</li>
-</ul>
-<p><code>lpush + lpop</code></p>
-<p><code>rpush + rpop</code></p>
-<ul>
-<li>队列（先进先出 FIFO）</li>
-</ul>
-<p><code>lpush + rpop</code></p>
-<p><code>rpush + lpop</code></p>
-<ul>
-<li>阻塞队列（Blocking queue）</li>
-</ul>
-<p><code>lpush + brpop</code></p>
-<p><code>rpush + blpop</code></p>
-<h1 id="阻塞队列还不是很清楚"><a href="#阻塞队列还不是很清楚" class="headerlink" title="阻塞队列还不是很清楚"></a>阻塞队列还不是很清楚</h1><h3 id="1-3-Hash"><a href="#1-3-Hash" class="headerlink" title="1.3 Hash"></a>1.3 Hash</h3><p>unordered_map&lt;string, unordered_map&lt;string, string&gt;&gt;</p>
-<p>unordered_map&lt;key, unordered_map&lt;field, value&gt;&gt;</p>
-<p>主要命令及应用</p>
-<p><code>hset key field value</code> 设置key对应的hash中的field对应的值</p>
-<p><code>hget key field</code> 获取key对应hash中的field对应的值</p>
-<p><code>hmset key field1 value1 field2 value2 ... fieldn valuen</code> 设置多个hash键值对</p>
-<p><code>hmget key field1 field2 ... fieldn</code> </p>
-<p><code>hgetall key</code> 查看key中所有键值对</p>
-<p><code>hincrby key field increment</code> 给key对应hash中的field对应的值增加一个整数值</p>
-<p><code>hlen key</code> 获取key对应的hash有多少个键值对</p>
-<p><code>hdel key field</code> 删除key 对应的 hash 的键值对，该键为field</p>
-<ul>
-<li><code>hmset role:10001 name mark age 30 sex male </code> </li>
-</ul>
-<p>与string比较</p>
-<p><code>set role:10001 &#39;&#123;[&quot;name&quot;]: &quot;mark&quot;,[&quot;sex&quot;]:&quot;male&quot;, [&quot;age&quot;]:30&#125;&#39;</code></p>
-<p>假设现在修改mark 的年龄为31岁</p>
-<p>hash:</p>
-<p><code>hset role:10001 age 31</code></p>
-<p>string:</p>
-<p><code>get role:10001</code> 将得到的字符串调用json解密，取出字段，修改age值</p>
-<p>然后调用json加密</p>
-<p><code>set role:10001 &#39;&#123;[&quot;name&quot;]: &quot;mark&quot;,[&quot;sex&quot;]:&quot;male&quot;, [&quot;age&quot;]:31&#125;&#39;</code></p>
-<p>应用场景：</p>
-<p>电商平台的购物车：将用户ID作为key，将商品ID作为field，将商品数量作为value</p>
-<p>添加商品</p>
-<p><code>hset MyCart:10001 40001 1</code></p>
-<p><code>lpush MyItem:10001 40001</code></p>
-<p>增加数量</p>
-<p><code>hincreby MyCart:10001 40001 -1</code> 减少商品数量1</p>
-<p>显示购物车内所以的物品种类数</p>
-<p><code>hlen MyCart:10001</code></p>
-<p>获得所有商品（包括商品的名字还有数量）</p>
-<p><code>lrang MyItem:10001</code> </p>
-<p><code>hgetall MyCart:10001</code></p>
-<p>删除商品</p>
-<p><code>hdel MyCart:10001 40001</code></p>
-<p><code>lrem MyItem:10001 1 40001</code></p>
-<p>问：类似京东淘宝，物品添加入购物车是按照时间顺序添加的，而hash存储的顺序是无序的，怎么解决呢？</p>
-<p>答：redis经常是用多结构一起使用。</p>
-<p>小结：string使用于数据不会发生改变的情况，而hash使用于需要频繁修改值的情况。</p>
-<h3 id="1-4-Set"><a href="#1-4-Set" class="headerlink" title="1.4 Set"></a>1.4 Set</h3><p>unordered_map&lt;stirng, unordered_set<string>&gt;</p>
-<p>unordered_map&lt;key, unordered_set<member>&gt;</p>
-<p>主要命令及应用</p>
-<p><code>sadd key member [member ...]</code></p>
-<p><code>scard key</code></p>
-<p><code>smembers key</code></p>
-<p><code>sismember key member</code></p>
-<p><code>srandmember key [count]</code></p>
-<p><code>spop key [count]</code></p>
-<p><code>sdiff key [key ...]</code></p>
-<p><code>sinter key [key ...]</code></p>
-<p><code>sunion key [key ...]</code></p>
-<ul>
-<li>抽奖</li>
-</ul>
-<p>添加抽奖用户</p>
-<p><code>sadd Award:1 10001 10002 10003 10004 10005 10006</code></p>
-<p><code>sadd Award:1 10009</code></p>
-<p>查看所有抽奖用户</p>
-<p><code>smembers Award:1</code></p>
-<p>抽取多名幸运用户</p>
-<p><code>srandmember Award:1 10</code></p>
-<p>如果抽取一等奖一名，二等奖2名，三等奖3名，该如何操作？</p>
-<ul>
-<li>共同关注</li>
-</ul>
-<p><code>sadd follow:A mark king darren mole vico</code></p>
-<p><code>sadd follow:C mark king darren</code></p>
-<p><code>sinter follow:A follow:C</code></p>
-<ul>
-<li><p>可能认识的人</p>
-<p><code>sadd follow:A mark king darren mole vico</code></p>
-<p><code>sadd follow:C mark king darren</code></p>
-<p>c可能认识的人</p>
-<p><code>sdiff follow:A follow:C</code> </p>
-</li>
-</ul>
-<h3 id="1-5-Zset"><a href="#1-5-Zset" class="headerlink" title="1.5 Zset"></a>1.5 Zset</h3><p>unordered_map&lt;string, skiplist&lt;string, string&gt;&gt;</p>
-<p>unordered_map&lt;key, skiplist&lt;member, score&gt;&gt;</p>
-<p><code>zadd key [NX|XX] [ch] [INCER] score member [score member ...]</code></p>
-<p><code>zrem key member [member ...]</code></p>
-<p><code>zscore key member</code></p>
-<p><code>zincrby key increment member</code></p>
-<p><code>zcard key</code></p>
-<p><code>zrank key member</code></p>
-<p><code>zrange key start stop [withscores]</code></p>
-<p><code>zrevrange key start stop [withsocres]</code></p>
-<p>案例分析：百度热榜</p>
-<p>点击新闻：</p>
-<p><code>zincrby hot:20210203 1 10001</code></p>
-<p><code>zincrby hot:20210203 1 10002</code></p>
-<p><code>zincrby hot:20210203 1 10003</code></p>
-<p><code>zincrby hot:20210203 1 10004</code></p>
-<p><code>zincrby hot:20210203 1 10005</code></p>
-<p><code>zincrby hot:20210203 1 10006</code></p>
-<p><code>zincrby hot:20210203 1 10007</code></p>
-<p>获取排行榜：</p>
-<p><code>zrevrange hot:20210203 0 6 withscores</code></p>
-
-      
-
-      
-        <div class="page-reward">
-          <a href="javascript:;" class="page-reward-btn tooltip-top">
-            <div class="tooltip tooltip-east">
-            <span class="tooltip-item">
-              赏
-            </span>
-            <span class="tooltip-content">
-              <span class="tooltip-text">
-                <span class="tooltip-inner">
-                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
-                  <div class="reward-box">
-                    
-                    
-                  </div>
-                </span>
-              </span>
-            </span>
-          </div>
-          </a>
-        </div>
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
+        <div class="article-info info-on-right">
+          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -431,106 +195,19 @@
 		</ul>
 	</div>
 
-      
+          
 
-      
-
-      
-        
-<div class="share-btn share-icons tooltip-left">
-  <div class="tooltip tooltip-east">
-    <span class="tooltip-item">
-      <a href="javascript:;" class="share-sns share-outer">
-        <i class="icon icon-share"></i>
-      </a>
-    </span>
-    <span class="tooltip-content">
-      <div class="share-wrap">
-        <div class="share-icons">
-          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
-            <i class="icon icon-weibo"></i>
-          </a>
-          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
-            <i class="icon icon-weixin"></i>
-          </a>
-          <a class="qq share-sns" href="javascript:;" data-type="qq">
-            <i class="icon icon-qq"></i>
-          </a>
-          <a class="douban share-sns" href="javascript:;" data-type="douban">
-            <i class="icon icon-douban"></i>
-          </a>
-          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
-            <i class="icon icon-qzone"></i>
-          </a>
-          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
-            <i class="icon icon-facebook"></i>
-          </a>
-          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
-            <i class="icon icon-twitter"></i>
-          </a>
-          <a class="google share-sns" href="javascript:;" data-type="google">
-            <i class="icon icon-google"></i>
-          </a>
         </div>
-      </div>
-    </span>
-  </div>
-</div>
-
-<div class="page-modal wx-share js-wx-box">
-    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
-    <p>扫一扫，分享到微信</p>
-    <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://example.com/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/" alt="微信分享二维码">
-    </div>
-</div>
-
-<div class="mask js-mask"></div>
-      
-      <div class="clearfix"></div>
-    </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-  
-<nav id="article-nav">
   
   
-    <a href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">二叉树：前、中、后序遍历</div>
-      <i class="icon-circle-right"></i>
-    </a>
-  
-</nav>
-
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-  
-  
+    </div></section>
   
 
-  
-
-  
-
-  
+    
 
 
           </div>
@@ -553,9 +230,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: true,
+		isPost: false,
 		isArchive: false,
-		isTag: false,
+		isTag: true,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,
