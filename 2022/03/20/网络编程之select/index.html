@@ -8,20 +8,20 @@
   <link rel="dns-prefetch" href="http://example.com">
   <title>网络编程之select | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="1、序在多线程、多进程的网络模型中，监听socket阻塞在accept()下，客户端socket阻塞在recv()或者read()下，而select模型中socket全部阻塞在select()下。    图片来源 https:&#x2F;&#x2F;space.bilibili.com&#x2F;627875426?spm_id_from&#x3D;333.788.b_765f7570696e666f.2  2、select()sele">
+  <meta name="description" content="1、序在多线程、多进程的网络模型中，监听socket阻塞在accept()下，客户端socket阻塞在recv()或者read()下，而select模型中socket全部阻塞在select()下。   图片来源 https:&#x2F;&#x2F;space.bilibili.com&#x2F;627875426?spm_id_from&#x3D;333.788.b_765f7570696e666f.2  2、select流程selec">
 <meta property="og:type" content="article">
 <meta property="og:title" content="网络编程之select">
 <meta property="og:url" content="http://example.com/2022/03/20/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bselect/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="1、序在多线程、多进程的网络模型中，监听socket阻塞在accept()下，客户端socket阻塞在recv()或者read()下，而select模型中socket全部阻塞在select()下。    图片来源 https:&#x2F;&#x2F;space.bilibili.com&#x2F;627875426?spm_id_from&#x3D;333.788.b_765f7570696e666f.2  2、select()sele">
+<meta property="og:description" content="1、序在多线程、多进程的网络模型中，监听socket阻塞在accept()下，客户端socket阻塞在recv()或者read()下，而select模型中socket全部阻塞在select()下。   图片来源 https:&#x2F;&#x2F;space.bilibili.com&#x2F;627875426?spm_id_from&#x3D;333.788.b_765f7570696e666f.2  2、select流程selec">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="d:/#文档%5C#学习资料%5C网络编程%5Cselect.png">
+<meta property="og:image" content="https://s2.loli.net/2022/03/21/mIinWTB79vVbJjK.png">
 <meta property="article:published_time" content="2022-03-20T09:54:07.000Z">
-<meta property="article:modified_time" content="2022-03-20T14:36:02.192Z">
+<meta property="article:modified_time" content="2022-03-21T08:42:50.123Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="select">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="d:/#文档%5C#学习资料%5C网络编程%5Cselect.png">
+<meta name="twitter:image" content="https://s2.loli.net/2022/03/21/mIinWTB79vVbJjK.png">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -178,12 +178,11 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h2 id="1、序"><a href="#1、序" class="headerlink" title="1、序"></a>1、序</h2><p>在多线程、多进程的网络模型中，监听socket阻塞在accept()下，客户端socket阻塞在recv()或者read()下，而select模型中socket全部阻塞在select()下。</p>
-<img src="D:\#文档\#学习资料\网络编程\select.png" alt="select" style="zoom:67%;" />
-
+<p><img src="https://s2.loli.net/2022/03/21/mIinWTB79vVbJjK.png" alt="select.png"></p>
 <blockquote>
 <p>图片来源 <a target="_blank" rel="noopener" href="https://space.bilibili.com/627875426?spm_id_from=333.788.b_765f7570696e666f.2">https://space.bilibili.com/627875426?spm_id_from=333.788.b_765f7570696e666f.2</a></p>
 </blockquote>
-<h2 id="2、select"><a href="#2、select" class="headerlink" title="2、select()"></a>2、select()</h2><p>select模型的核心思想体现在select()函数上。</p>
+<h2 id="2、select流程"><a href="#2、select流程" class="headerlink" title="2、select流程"></a>2、select流程</h2><p>select模型的核心思想体现在select()函数上。</p>
 <p>select模型是基于I/O复用的，这里的I/O指的就是文件标识符。I/O复用的核心，从字面上看就是文件标识符的重复利用，select()函数实现I/O复用就是利用socket集合fd_set。</p>
 <p>select模型的基本流程：</p>
 <ol>
@@ -193,6 +192,13 @@
 <li>返回2，以此循环。</li>
 </ol>
 <p>可以发现，<code>select()</code>中的<code>accept()</code>和<code>read()</code>函数处是不会发生阻塞的。</p>
+<h2 id="3、select缺点"><a href="#3、select缺点" class="headerlink" title="3、select缺点"></a>3、select缺点</h2><p>缺点主要是三个方面：</p>
+<ol>
+<li>select支持的文件描述符数量太少了，默认是1024。虽然可以调整，但是随着描述符越大，select的效率将越低。</li>
+<li>每次调用select，都要把fd_set从用户态拷贝到内核态。在高并发下，内存拷贝是很大的开销。</li>
+<li>同时在线的大量客户端有事件发送的可能很少，但还是需要遍历fd_set，因此随着监视的描述符数量的增长，其效率也会线性下降。</li>
+</ol>
+<p>select 是I/O复用函数，除了用于网络通信，还可以用于文件、管道、终端、设备等操作。</p>
 
       
 
