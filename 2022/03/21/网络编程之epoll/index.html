@@ -6,16 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://example.com">
-  <title>Tag: 数据结构 | Hexo</title>
+  <title>网络编程之epoll | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="简单地记录。">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://example.com/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
+  <meta name="description" content="1、序epoll模型解决了select和poll所有的问题（fdset拷贝和轮询），采用了最合理的设计和实现方案。 2、epoll的函数和参数（1）创建epoll的句柄，它本身就是一个fdint epoll_create(int size); linux版本大于2.6.8时，size可以忽略。 （2）注册需要监视fd和事件int epoll_ctl(int epfd, int op, int fd">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络编程之epoll">
+<meta property="og:url" content="http://example.com/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="简单地记录。">
+<meta property="og:description" content="1、序epoll模型解决了select和poll所有的问题（fdset拷贝和轮询），采用了最合理的设计和实现方案。 2、epoll的函数和参数（1）创建epoll的句柄，它本身就是一个fdint epoll_create(int size); linux版本大于2.6.8时，size可以忽略。 （2）注册需要监视fd和事件int epoll_ctl(int epfd, int op, int fd">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-21T11:41:10.000Z">
+<meta property="article:modified_time" content="2022-03-21T12:57:03.876Z">
 <meta property="article:author" content="活人痞兹堡">
+<meta property="article:tag" content="epoll">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -152,106 +155,186 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-网络编程之epoll" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2022" class="archive-year">2022</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/">Redis源码分析（一）</a>
+    <h1 class="article-title" itemprop="name">
+      网络编程之epoll
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/" class="archive-article-date">
+  	<time datetime="2022-03-21T11:41:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="1、序"><a href="#1、序" class="headerlink" title="1、序"></a>1、序</h2><p>epoll模型解决了select和poll所有的问题（fdset拷贝和轮询），采用了最合理的设计和实现方案。</p>
+<h2 id="2、epoll的函数和参数"><a href="#2、epoll的函数和参数" class="headerlink" title="2、epoll的函数和参数"></a>2、epoll的函数和参数</h2><h3 id="（1）创建epoll的句柄，它本身就是一个fd"><a href="#（1）创建epoll的句柄，它本身就是一个fd" class="headerlink" title="（1）创建epoll的句柄，它本身就是一个fd"></a>（1）创建epoll的句柄，它本身就是一个fd</h3><p>int epoll_create(int size);</p>
+<p>linux版本大于2.6.8时，size可以忽略。</p>
+<h3 id="（2）注册需要监视fd和事件"><a href="#（2）注册需要监视fd和事件" class="headerlink" title="（2）注册需要监视fd和事件"></a>（2）注册需要监视fd和事件</h3><p>int epoll_ctl(int epfd, int op, int fd, struct epoll_event* event);</p>
+<p>说明：</p>
+<ol>
+<li>此处的epfd就是epoll_create返回的，代表epoll句柄（本质也是一个socket）</li>
+<li>op表示事件操作的类型，包含三个参数：添加EPOLL_CTL_ADD、修改EPOLL_CTL_MOD、删除EPOLL_CTL_DEL。</li>
+<li>fd需要保存的文件描述符</li>
+<li>event保存了两个成员，event.data.fd同fd，ev.events保存事件的类型（读事件EPOLLIN、写事件EPOLLOUT等），这里默认事件触发是水平触发。需要边缘触发的话加上  |EPOLLET。</li>
+</ol>
+<h3 id="（3）-等待事件发生"><a href="#（3）-等待事件发生" class="headerlink" title="（3） 等待事件发生"></a>（3） 等待事件发生</h3><p>struct epoll_event events[MAXEVENTS];</p>
+<p>MAXEVENTS是最大存放事件数。当监视到的事件大于MAXEVENTS时，也会水平触发，不会掉事件。</p>
+<p>int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);</p>
+<p>这里的events就是结构数据，用来存放监视到的事件。epoll_wait以阻塞的方式，等待事件的发生。epoll_wait返回值类似select()，返回值小于0即连接失败，返回值等于0即连接超时，大于0即连接成功，此时返回值表示有事件发生的fd。</p>
+<h2 id="3、epoll的水平触发和边缘触发"><a href="#3、epoll的水平触发和边缘触发" class="headerlink" title="3、epoll的水平触发和边缘触发"></a>3、epoll的水平触发和边缘触发</h2><p>水平触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>立即</strong>再次报告该fd。</p>
+<p>边缘触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>下次</strong>再报告该fd。</p>
+<p>也就是epoll_wait()在报告了部分事件（或者数据没读完）后有返回值infds，会立即再次返回新的infds（也就是立即报告了事件/读取剩下的事件）表明报告剩下的事件。</p>
+<h2 id="4、epoll解决问题"><a href="#4、epoll解决问题" class="headerlink" title="4、epoll解决问题"></a>4、epoll解决问题</h2><p>epoll无需拷贝，通过发生事件添加入events，没有无效的轮询，循环体次数必是响应事件个数。这样的设计即没有多余的内存拷贝，也减少了轮询时间。</p>
+<h2 id="5、小结"><a href="#5、小结" class="headerlink" title="5、小结"></a>5、小结</h2><p>epoll采用数组的方式存储fd，直接将有事件发生的fd置前，区别于select和poll扫描位图的方式，节省了时间与资源。</p>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">redis</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">epoll</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://example.com/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/" class="archive-article-date">
-  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bpoll/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">网络编程之poll</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/">二叉树：前、中、后序遍历</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">二叉树</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
+
+  
 
 
           </div>
@@ -274,9 +357,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,

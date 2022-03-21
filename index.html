@@ -8,10 +8,12 @@
   <link rel="dns-prefetch" href="http://example.com">
   <title>Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
+  <meta name="description" content="简单地记录。">
+<meta property="og:type" content="website">
 <meta property="og:title" content="Hexo">
 <meta property="og:url" content="http://example.com/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="简单地记录。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="活人痞兹堡">
 <meta name="twitter:card" content="summary">
@@ -77,7 +79,7 @@
 		<nav class="header-nav">
 			<div class="social">
 				
-					<a class="github" target="_blank" href="#" title="github"><i class="icon-github"></i></a>
+					<a class="github" target="_blank" href="https://github.com/huorenpi" title="github"><i class="icon-github"></i></a>
 		        
 					<a class="weibo" target="_blank" href="#" title="weibo"><i class="icon-weibo"></i></a>
 		        
@@ -118,7 +120,7 @@
 			<nav class="header-nav">
 				<div class="social">
 					
-						<a class="github" target="_blank" href="#" title="github"><i class="icon-github"></i></a>
+						<a class="github" target="_blank" href="https://github.com/huorenpi" title="github"><i class="icon-github"></i></a>
 			        
 						<a class="weibo" target="_blank" href="#" title="weibo"><i class="icon-weibo"></i></a>
 			        
@@ -151,6 +153,177 @@
           </div>
           <div id="js-content" class="content-ll">
             
+  
+    <article id="post-网络编程之epoll" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/">网络编程之epoll</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/" class="archive-article-date">
+  	<time datetime="2022-03-21T11:41:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="1、序"><a href="#1、序" class="headerlink" title="1、序"></a>1、序</h2><p>epoll模型解决了select和poll所有的问题（fdset拷贝和轮询），采用了最合理的设计和实现方案。</p>
+<h2 id="2、epoll的函数和参数"><a href="#2、epoll的函数和参数" class="headerlink" title="2、epoll的函数和参数"></a>2、epoll的函数和参数</h2><h3 id="（1）创建epoll的句柄，它本身就是一个fd"><a href="#（1）创建epoll的句柄，它本身就是一个fd" class="headerlink" title="（1）创建epoll的句柄，它本身就是一个fd"></a>（1）创建epoll的句柄，它本身就是一个fd</h3><p>int epoll_create(int size);</p>
+<p>linux版本大于2.6.8时，size可以忽略。</p>
+<h3 id="（2）注册需要监视fd和事件"><a href="#（2）注册需要监视fd和事件" class="headerlink" title="（2）注册需要监视fd和事件"></a>（2）注册需要监视fd和事件</h3><p>int epoll_ctl(int epfd, int op, int fd, struct epoll_event* event);</p>
+<p>说明：</p>
+<ol>
+<li>此处的epfd就是epoll_create返回的，代表epoll句柄（本质也是一个socket）</li>
+<li>op表示事件操作的类型，包含三个参数：添加EPOLL_CTL_ADD、修改EPOLL_CTL_MOD、删除EPOLL_CTL_DEL。</li>
+<li>fd需要保存的文件描述符</li>
+<li>event保存了两个成员，event.data.fd同fd，ev.events保存事件的类型（读事件EPOLLIN、写事件EPOLLOUT等），这里默认事件触发是水平触发。需要边缘触发的话加上  |EPOLLET。</li>
+</ol>
+<h3 id="（3）-等待事件发生"><a href="#（3）-等待事件发生" class="headerlink" title="（3） 等待事件发生"></a>（3） 等待事件发生</h3><p>struct epoll_event events[MAXEVENTS];</p>
+<p>MAXEVENTS是最大存放事件数。当监视到的事件大于MAXEVENTS时，也会水平触发，不会掉事件。</p>
+<p>int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);</p>
+<p>这里的events就是结构数据，用来存放监视到的事件。epoll_wait以阻塞的方式，等待事件的发生。epoll_wait返回值类似select()，返回值小于0即连接失败，返回值等于0即连接超时，大于0即连接成功，此时返回值表示有事件发生的fd。</p>
+<h2 id="3、epoll的水平触发和边缘触发"><a href="#3、epoll的水平触发和边缘触发" class="headerlink" title="3、epoll的水平触发和边缘触发"></a>3、epoll的水平触发和边缘触发</h2><p>水平触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>立即</strong>再次报告该fd。</p>
+<p>边缘触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>下次</strong>再报告该fd。</p>
+<p>也就是epoll_wait()在报告了部分事件（或者数据没读完）后有返回值infds，会立即再次返回新的infds（也就是立即报告了事件/读取剩下的事件）表明报告剩下的事件。</p>
+<h2 id="4、epoll解决问题"><a href="#4、epoll解决问题" class="headerlink" title="4、epoll解决问题"></a>4、epoll解决问题</h2><p>epoll无需拷贝，通过发生事件添加入events，没有无效的轮询，循环体次数必是响应事件个数。这样的设计即没有多余的内存拷贝，也减少了轮询时间。</p>
+<h2 id="5、小结"><a href="#5、小结" class="headerlink" title="5、小结"></a>5、小结</h2><p>epoll采用数组的方式存储fd，直接将有事件发生的fd置前，区别于select和poll扫描位图的方式，节省了时间与资源。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">epoll</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bepoll/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-网络编程之poll" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bpoll/">网络编程之poll</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bpoll/" class="archive-article-date">
+  	<time datetime="2022-03-21T09:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>poll和select在本质上没有区别，管理多个文件描述符也是进行轮询，根据描述符的状态进行处理，打不但是poll没有最大文件描述符数量的限制。</p>
+<p>select采用fd_set(bitmap)，poll采用了数组。</p>
+<p>poll和select同样存在一个缺点就是，文件描述符的组数被整体复制与用户态和内核态的地址空间之间，而不论这些文件描述符是否有事件，它的开销随着文件描述符数量的增加而线性增大。</p>
+<p>还有poll返回后，也需要遍历整个描述符的数组才能得到有事件的描述符。</p>
+<p>poll的流程类似select，细微的区别在于poll模型不需要手动备份fd_set，poll()函数直接操作数组fds。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">poll</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/21/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8Bpoll/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
   
     <article id="post-网络编程之select" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
@@ -194,6 +367,7 @@
 <li>同时在线的大量客户端有事件发送的可能很少，但还是需要遍历fd_set，因此随着监视的描述符数量的增长，其效率也会线性下降。</li>
 </ol>
 <p>select 是I/O复用函数，除了用于网络通信，还可以用于文件、管道、终端、设备等操作。</p>
+<h2 id="4、select的水平触发"><a href="#4、select的水平触发" class="headerlink" title="4、select的水平触发"></a>4、select的水平触发</h2><p>select采用“水平触发”的方式，如果报告了fd后事件没有被处理或者数据没有被全部读取，那么下次select时会再次报告该fd。</p>
 
       
 
@@ -815,6 +989,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">select</a>
               </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">epoll</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">poll</a>
+              </li>
             
             <div class="clearfix"></div>
           </ul>
@@ -866,26 +1048,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           
             <li class="search-li">
               <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接1</a>
-            </li>
-          
-            <li class="search-li">
-              <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接2</a>
-            </li>
-          
-            <li class="search-li">
-              <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接3</a>
-            </li>
-          
-            <li class="search-li">
-              <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接4</a>
-            </li>
-          
-            <li class="search-li">
-              <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接5</a>
-            </li>
-          
-            <li class="search-li">
-              <a href="http://localhost:4000/" target="_blank" class="search-title"><i class="icon-quo-left icon"></i>友情链接6</a>
             </li>
           
         </ul>
