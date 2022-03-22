@@ -154,6 +154,85 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-cpp知识整理" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/22/cpp%E7%9F%A5%E8%AF%86%E6%95%B4%E7%90%86/">cpp知识整理</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/22/cpp%E7%9F%A5%E8%AF%86%E6%95%B4%E7%90%86/" class="archive-article-date">
+  	<time datetime="2022-03-22T03:45:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-22</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一、Linux进程的5个数据段"><a href="#一、Linux进程的5个数据段" class="headerlink" title="一、Linux进程的5个数据段"></a>一、Linux进程的5个数据段</h2><p>进程（执行的程序）会占用一定数量的内存，它或是用来存放从磁盘载入的程序代码，或是存放取自用户输入的数据等等。不过进程对这些内存的管理方式因内存用途 不一而不尽相同，有些内存是事先静态分配和统一回收的，而有些却是按需要动态分配和回收的。对任何一个普通进程来讲，它都会涉及到5种不同的数据段。</p>
+<p><em><strong>BSS段</strong>：</em>BSS段（bss segment）通常是指用来存放程序中未初始化的全局变量的一块内存区域。BSS是英文Block Started by Symbol的简称。BSS段属于静态内存分配。.bss是不占用.exe文件空间的，其内容由操作系统初始化（清零）。bss段（未手动初始化的数据）并不给该段的数据分配空间，只是记录数据所需空间的大小。</p>
+<p><em><strong>数据段</strong>：</em>数据段（data segment）通常是指用来存放程序中已初始化的全局变量的一块内存区域。数据段属于静态内存分配。.data却需要占用，其内容由程序初始化。</p>
+<p><em><strong>代码段</strong>：</em>代码段（code segment/text segment）通常是指用来存放程序执行代码的一块内存区域。这部分区域的大小在程序运行前就已经确定，并且内存区域通常属于只读, 某些架构也允许代码段为可写，即允许修改程序。在代码段中，也有可能包含一些只读的常数变量，例如字符串常量等。</p>
+<p><em><strong>堆（heap）</strong>：</em>堆是用于存放进程运行中被动态分配的内存段，它的大小并不固定，可动态扩张或缩减。当进程调用malloc等函数分配内存时，新分配的内存就被动态添加到堆上（堆被扩张）；当利用free等函数释放内存时，被释放的内存从堆中被剔除（堆被缩减）</p>
+<p><em><strong>栈（stack）</strong></em>：栈又称堆栈， 是用户存放程序临时创建的局部变量，也就是说我们函数括弧“{}”中定义的变量（但不包括static声明的变量，static意味着在数据段中存放变量）。除此以外，在函数被调用时，其参数也会被压入发起调用的进程栈中，并且待到调用结束后，函数的返回值也会被存放回栈中。由于栈的先进后出特点，所以栈特别方便用来保存/恢复调用现场。从这个意义上讲，我们可以把堆栈看成一个寄存、交换临时数据的内存区。它是由操作系统分配的，内存的申请与回收都由OS管理。</p>
+<h2 id="二、"><a href="#二、" class="headerlink" title="二、"></a>二、</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">c++</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/22/cpp%E7%9F%A5%E8%AF%86%E6%95%B4%E7%90%86/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-网络编程之epoll" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -192,8 +271,33 @@
 <h2 id="3、epoll的水平触发和边缘触发"><a href="#3、epoll的水平触发和边缘触发" class="headerlink" title="3、epoll的水平触发和边缘触发"></a>3、epoll的水平触发和边缘触发</h2><p>水平触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>立即</strong>再次报告该fd。</p>
 <p>边缘触发：如果报告了fd后事件没有被全部处理或者数据没有被全部读取，那么epoll会<strong>下次</strong>再报告该fd。</p>
 <p>也就是epoll_wait()在报告了部分事件（或者数据没读完）后有返回值infds，会立即再次返回新的infds（也就是立即报告了事件/读取剩下的事件）表明报告剩下的事件。</p>
-<h2 id="4、epoll解决问题"><a href="#4、epoll解决问题" class="headerlink" title="4、epoll解决问题"></a>4、epoll解决问题</h2><p>epoll无需拷贝，通过发生事件添加入events，没有无效的轮询，循环体次数必是响应事件个数。这样的设计即没有多余的内存拷贝，也减少了轮询时间。</p>
-<h2 id="5、小结"><a href="#5、小结" class="headerlink" title="5、小结"></a>5、小结</h2><p>epoll采用数组的方式存储fd，直接将有事件发生的fd置前，区别于select和poll扫描位图的方式，节省了时间与资源。</p>
+<h2 id="4、内核收包以及事件触发的过程"><a href="#4、内核收包以及事件触发的过程" class="headerlink" title="4、内核收包以及事件触发的过程"></a>4、内核收包以及事件触发的过程</h2><p>内核收包以及事件触发的过程：</p>
+<ol>
+<li><p>包从网卡进来</p>
+</li>
+<li><p>一路经过各个子系统到达内核协议栈（传输层）</p>
+</li>
+<li><p>内核根据包的 {src_ip:src_port, dst_ip:dst_port} 找到 socket 对象（内核维护了一份四元组和 socket 对象的一一映射表）</p>
+</li>
+<li><p>数据包被放到 socket 对象的接收缓冲区</p>
+</li>
+<li><p>内核唤醒 socket 对象上的等待队列中的进程，通知 socket 事件</p>
+</li>
+<li><p>进程唤醒，处理 socket 事件（read/write)</p>
+<blockquote>
+<p>原文链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/u013051748/article/details/108804064">https://blog.csdn.net/u013051748/article/details/108804064</a></p>
+</blockquote>
+</li>
+</ol>
+<p>一个 socket 实例包含了一个 file 的指针，以及一个 socket_wq 变量。其中 socket_wq 中的 <strong>wait 表示等待队列，fasync_list 表示异步等待队列</strong>。<strong>等待队列和异步等待队列中存放的是关注这个 socket 上的事件的进程</strong>。区别是等待队列中的进程会处于阻塞状态，处于异步等待队列中的进程不会阻塞。</p>
+<p>当 socket 就绪后（接收缓冲区有数据），那么就会 wake up 等待队列中的进程，通知进程 socket 上有事件，可以开始处理了。至此，一个数据包从网卡最终达到应用程序内部了。</p>
+<h2 id="5、epoll解决的问题"><a href="#5、epoll解决的问题" class="headerlink" title="5、epoll解决的问题"></a>5、epoll解决的问题</h2><p>涉及到 epoll 后，稍微有点差异。</p>
+<p>上面其实提到了等待队列，每当我们创建一个 socket 后（无论是 socket()函数 还是 accept() 函数)，socket 对象中会有一个进程的等待队列，表示某个或者某些进程在等待这个 socket 上的事件。</p>
+<p>但是当我们往 epoll 红黑树上添加一个 epitem 节点（也就是一个 socket 对象，或者说一个 fd)后，实际上还会在这个 socket 对象的 wait queue 上注册一个 callback function，当这个 socket 上有事件发生后就会调用这个 callback function。<strong>这里与上面讲到的不太一样，并不会直接 wake up 一个等待进程</strong>，需要注意一下。</p>
+<p>简单讲就是，这个 socket 在添加到这棵 epoll 树上时，会在这个 socket 的 wait queue 里注册一个回调函数，当有事件发生的时候再调用这个回调函数（而不是唤醒进程）。回调函数会把这个 socket 添加到创建 epoll instance 时对应的 eventpoll 实例中的就绪链表上，也就是 rdllist 上，并唤醒 epoll_wait，通知 epoll 有 socket 就绪，并且已经放到了就绪链表中，然后应用层就会来遍历这个就绪链表，并拷贝到用户空间，开始后续的事件处理（read/write)。</p>
+<p>所以这里其实就体现出与 select 的不同， <strong>epoll 把就绪的 socket 给缓存了下来，放到一个双向链表中，这样当唤醒进程后，进程就知道哪些 socket 就绪了，而 select 是进程被唤醒后只知道有 socket 就绪，但是不知道哪些 socket 就绪，所以 select 需要遍历所有的 socket。</strong></p>
+<p>另外，应用程序遍历这个就绪链表，由于就绪链表是位于内核空间，所以需要拷贝到用户空间。epoll_wait 最终会调用到 ep_send_events_proc 这个函数，从函数名字也知道，这个函数是用来把就绪链表中的内容复制到用户空间，向应用程序通知事件。应用程序调用 epoll_wait 返回后，开始遍历拷贝回来的内容，处理 socket 事件。</p>
+<p>至此，从注册一个 file descriptor(socket fd) 到 epoll 红黑树，到这个 socket 上有数据包从网卡进来，再到如何触发 epoll，再到应用程序的用户空间，由应用程序开始 read/write 事件的整个过程就理顺了。</p>
 
       
 
@@ -908,6 +1012,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">c++</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">二叉树</a>
               </li>
              
@@ -916,11 +1024,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">select</a>
+                <a href="javascript:void(0)" class="js-tag color5">poll</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">poll</a>
+                <a href="javascript:void(0)" class="js-tag color2">select</a>
               </li>
             
             <div class="clearfix"></div>
