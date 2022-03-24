@@ -154,6 +154,112 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-网络编程之常见问题" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/24/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">网络编程之常见问题</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/24/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" class="archive-article-date">
+  	<time datetime="2022-03-24T06:30:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-24</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <blockquote>
+<p>原文链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/www5256246/article/details/81637179">https://blog.csdn.net/www5256246/article/details/81637179</a></p>
+</blockquote>
+<p>一：服务器并发数取决于那些？</p>
+<ol>
+<li>CPU 处理性能</li>
+</ol>
+<p>CPU 核数，假如 CPU有4个核，处理每个访问请求用线程去处理，那么4核每次最大能处理不超过8个线程，处理时间看单个线程处理完数据的时间，假如一个线程处理时间是40ms(毫秒)，那么最高秒级并发计算那就是 1000/40*8=200 那么每秒最高处理并发是200个，如果服务器只收不处理数据的话处理时间还能大幅度下降， 并发数还鞥你大幅度提升。</p>
+<ol start="2">
+<li>内存容量</li>
+</ol>
+<p>假设目前服务器有4G空闲内存，每次处理一个请求占用1MB内存，那么一秒就是200MB，假设服务器宕机时间为：1024MB*4/200=20.48秒会把服务器内存资源耗尽，如果长时间占用内存资源那么内存泄漏是一定多少会出现些，如果内存及时释放和内存泄漏降到最低，服务器程序异常退出的情况会大大降低，合理使用服务器自带的内存释放服务也会大大降低服务器程序异常退出情况，当服务器程序出现异常退出情况时，内存会自动释放恢复到4G空闲状态，使用自动监测脚本服务当服务器程序异常退出时自动调起相应的服务，保证服务器对外的使用率，服务器程序异常退出和服务器宕机是两个情况，服务器程序异常退出代表服务器可能正常运行，再次调起相关的程序即可；服务器宕机代表服务器系统出现异常，关机或者不在运行，需要人为的去操控；宕机属于重大服务器问题。</p>
+<ol start="3">
+<li>网络带宽</li>
+</ol>
+<p>并发的第三个因素网络带宽因素，假设服务器上下行带宽一共是5MB，假设一次请求数据大小字节占200字节，如果不需要回复 则支持最大的并发数为：1024MB<em>5/8=640KB</em>1024=655360字节/200=3276.8，则服务器只接受数据请求不回复的话能支持并发数为 3276.8个，如果服务器需要返回数据，假设返回的数据也是200字节，那么并发数为3276.8/2=1638.4个并发。</p>
+<ol start="4">
+<li>硬盘读写速度</li>
+</ol>
+<p>硬盘读写速度也从一个方面影响了数据的处理速度。</p>
+<p>二、并发策略</p>
+<ol>
+<li><p>服务器压力分流，现在市面上BAT都采用的是负载均衡技术，负载均衡有多个策略，最常用的是RR（轮巡）策略，RR+keepalived技术可以有效的保存用户的cookie和session，从链路层转换网络请求指向，用iptable保存用户IP表和指向的历史记录等等信息，负载均衡的存在意义是把单台服务器处理的压力分散，路由到多台服务器上，减轻单台服务器的压力，降低服务器宕机的几率和访问延迟的问题等等；</p>
+</li>
+<li><p>假如服务器遭受到攻击可以随时变换策略，比如master和slave角色互换，IP变化，域名重定向，可以使攻击者攻击目标变成无效或者丢失，这样可以保护用户正常的访问，但是不能有效的杜绝彻底攻击，可以加上IP访问限制等方式可以暂时拒绝攻击者的攻击。</p>
+</li>
+<li><p>多台服务器部署成集群后有效的提升服务器的处理能力和并发数量。</p>
+</li>
+<li><p>数据库和缓存的能力，不断的对数据库进行刷写无意会大量消耗服务器的资源，使用中间件和缓存技术有效的防止对数据库进行大量的刷写操作，保护服务器资源不被大量消耗。</p>
+</li>
+<li><p>使用WebRPC服务，模块拆分部署到不同的服务器，比如ABC 3个功能，如果3个功能在同一台服务器，那么服务器在处理各式各样的请求是会造成不同的资源消耗和处理瓶颈问题，如果把A B C 分别部署到3台不同的服务器，并且内网打通，这样会大面积降低耦合率，提升并发数，保护服务器。</p>
+</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">网络编程</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/24/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-STL之vector" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -608,104 +714,6 @@
 
 
   
-    <article id="post-二叉树：前、中、后序遍历" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/">二叉树：前、中、后序遍历</a>
-    </h1>
-  
-
-        
-        <a href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/" class="archive-article-date">
-  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>今日刷题有感，记录一下做二叉树如何选择遍历的方法。</p>
-<h2 id="1、关于前序遍历和后序遍历"><a href="#1、关于前序遍历和后序遍历" class="headerlink" title="1、关于前序遍历和后序遍历"></a>1、关于前序遍历和后序遍历</h2><p>Leetcode 226.反转二叉树题中，目标是反转一棵二叉树。题解给的思路是通过前序遍历，反转根节点下的左右节点。实现前序遍历可以通过递归法快速完成。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">        <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;right);      </span><br><span class="line">        <span class="keyword">return</span>(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>分析一下整段代码，可以看出前序遍历是完成反转的顺序是：先从上至下，后从左至右。我在思考，是否可以采取其他的遍历方式？显然，答案是可以。下面是采用后序遍历的方式完成反转的code。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">      <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">      <span class="built_in">invertTree</span>(root-&gt;right);</span><br><span class="line">      <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">      <span class="keyword">return</span>(root);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>后序遍历反转的动作顺序是：先从左到右，后从下至上。动作模式与前序遍历相反。</p>
-<h2 id="2、中序遍历"><a href="#2、中序遍历" class="headerlink" title="2、中序遍历"></a>2、中序遍历</h2><p>有趣的地方就在于中序遍历，贴上代码：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">        <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;right);      </span><br><span class="line">        <span class="keyword">return</span>(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>运行示例结果如下：</p>
-<p>输入</p>
-<p>[4,2,7,1,3,6,9]</p>
-<p>输出</p>
-<p>[4,7,2,6,9,1,3]</p>
-<p>预期结果</p>
-<p>[4,7,2,9,6,3,1]</p>
-<p>反序结果错误的原因在于中序遍历的不连贯性。这里的不连贯性指的是左右处理的连贯。</p>
-<h2 id="3、小结"><a href="#3、小结" class="headerlink" title="3、小结"></a>3、小结</h2><p>前序遍历先处理主干，遍历到最左下叶子，然后逐层向后；后序遍历先处理叶子节点，然后逐层向上处理。</p>
-<p>中序遍历的不连贯性让它无法解决对称问题，例如反转二叉树。但是存在其优点，？</p>
-<p>以后做题，可以根据动作模式判断选择合适的遍历方式。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">二叉树</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
     <article id="post-Redis源码分析（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -950,11 +958,11 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">redis</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">redis</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
         		</li>
       		
 		</ul>
@@ -965,6 +973,104 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2022/02/27/Redis%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-二叉树：前、中、后序遍历" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/">二叉树：前、中、后序遍历</a>
+    </h1>
+  
+
+        
+        <a href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/" class="archive-article-date">
+  	<time datetime="2022-02-27T13:17:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-02-27</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>今日刷题有感，记录一下做二叉树如何选择遍历的方法。</p>
+<h2 id="1、关于前序遍历和后序遍历"><a href="#1、关于前序遍历和后序遍历" class="headerlink" title="1、关于前序遍历和后序遍历"></a>1、关于前序遍历和后序遍历</h2><p>Leetcode 226.反转二叉树题中，目标是反转一棵二叉树。题解给的思路是通过前序遍历，反转根节点下的左右节点。实现前序遍历可以通过递归法快速完成。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">        <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;right);      </span><br><span class="line">        <span class="keyword">return</span>(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>分析一下整段代码，可以看出前序遍历是完成反转的顺序是：先从上至下，后从左至右。我在思考，是否可以采取其他的遍历方式？显然，答案是可以。下面是采用后序遍历的方式完成反转的code。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">      <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">      <span class="built_in">invertTree</span>(root-&gt;right);</span><br><span class="line">      <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">      <span class="keyword">return</span>(root);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>后序遍历反转的动作顺序是：先从左到右，后从下至上。动作模式与前序遍历相反。</p>
+<h2 id="2、中序遍历"><a href="#2、中序遍历" class="headerlink" title="2、中序遍历"></a>2、中序遍历</h2><p>有趣的地方就在于中序遍历，贴上代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">TreeNode* <span class="title">invertTree</span><span class="params">(TreeNode* root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!root) <span class="keyword">return</span> root;</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;left);</span><br><span class="line">        <span class="built_in">swap</span>(root-&gt;left, root-&gt;right);</span><br><span class="line">        <span class="built_in">invertTree</span>(root-&gt;right);      </span><br><span class="line">        <span class="keyword">return</span>(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>运行示例结果如下：</p>
+<p>输入</p>
+<p>[4,2,7,1,3,6,9]</p>
+<p>输出</p>
+<p>[4,7,2,6,9,1,3]</p>
+<p>预期结果</p>
+<p>[4,7,2,9,6,3,1]</p>
+<p>反序结果错误的原因在于中序遍历的不连贯性。这里的不连贯性指的是左右处理的连贯。</p>
+<h2 id="3、小结"><a href="#3、小结" class="headerlink" title="3、小结"></a>3、小结</h2><p>前序遍历先处理主干，遍历到最左下叶子，然后逐层向后；后序遍历先处理叶子节点，然后逐层向上处理。</p>
+<p>中序遍历的不连贯性让它无法解决对称问题，例如反转二叉树。但是存在其优点，？</p>
+<p>以后做题，可以根据动作模式判断选择合适的遍历方式。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">数据结构</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">二叉树</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/02/27/%E4%BA%8C%E5%8F%89%E6%A0%91%EF%BC%9A%E5%89%8D%E3%80%81%E4%B8%AD%E3%80%81%E5%90%8E%E5%BA%8F%E9%81%8D%E5%8E%86/">展开全文 >></a>
         </p>
       
 
@@ -1087,18 +1193,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">数据结构</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">二叉树</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">redis</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">STL</a>
               </li>
              
@@ -1107,11 +1201,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">redis</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">数据结构</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">c++</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">epoll</a>
+                <a href="javascript:void(0)" class="js-tag color4">二叉树</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1120,6 +1222,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">select</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">网络编程</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">epoll</a>
               </li>
             
             <div class="clearfix"></div>
