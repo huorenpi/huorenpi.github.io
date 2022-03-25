@@ -154,6 +154,106 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-linux操作系统之信号" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/25/linux%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%B9%8B%E4%BF%A1%E5%8F%B7/">linux操作系统之信号</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/25/linux%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%B9%8B%E4%BF%A1%E5%8F%B7/" class="archive-article-date">
+  	<time datetime="2022-03-25T10:36:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-25</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <blockquote>
+<p>参考文章 <a target="_blank" rel="noopener" href="http://www.freecplus.net/eec5c39aa63b45ad946f1cc08134d9f9.html">http://www.freecplus.net/eec5c39aa63b45ad946f1cc08134d9f9.html</a></p>
+</blockquote>
+<h2 id="一、信号"><a href="#一、信号" class="headerlink" title="一、信号"></a>一、信号</h2><h3 id="1、可靠信号与不可靠信号"><a href="#1、可靠信号与不可靠信号" class="headerlink" title="1、可靠信号与不可靠信号"></a>1、可靠信号与不可靠信号</h3><p>信号分为不可靠信号（1-32）与可靠信号（34-64）。</p>
+<p>目前而言，不可靠信号之不可靠在于存在信号丢失的问题，即进程收到的信号不排队。</p>
+<h3 id="2、信号处理函数被中断"><a href="#2、信号处理函数被中断" class="headerlink" title="2、信号处理函数被中断"></a>2、信号处理函数被中断</h3><p>当一个信号到达后，调用处理函数，如果此时有其他的信号发生，会中断之前的处理函数，等待新的信号处理函数完成后在去处理中断前的处理函数。</p>
+<p>同一个信号会排队阻塞。</p>
+<h3 id="3、信号的阻塞"><a href="#3、信号的阻塞" class="headerlink" title="3、信号的阻塞"></a>3、信号的阻塞</h3><p>如果不希望再接受到信号时中断当前的处理函数，也不希望忽略该信号，而是延时一段时间再去处理这个信号，这种情况也可以通过阻塞信号实现。</p>
+<p>信号的阻塞和忽略信号是不同的，被阻塞的信号也不会影响进程的行为，信号只是暂时被阻止传递。</p>
+<p>进程忽略一个信号时，信号会被传递出去但是进程会将信号丢弃。</p>
+<p>执行信号的处理动作被称为信号递达Delivery，信号从产生递达之间的状态，称为信号未决Pending。</p>
+<h2 id="二、实验"><a href="#二、实验" class="headerlink" title="二、实验"></a>二、实验</h2><h3 id="1、验证2"><a href="#1、验证2" class="headerlink" title="1、验证2"></a>1、验证2</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 实验函数名：e2.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;signal.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(<span class="type">int</span> sig)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;func 收到了信号 %d。\n&quot;</span>, sig);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;(%d)i = %d\n&quot;</span>, sig, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func1</span><span class="params">(<span class="type">int</span> sig)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;func1 收到了信号 %d。\n&quot;</span>, sig);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;(%d)i = %d\n&quot;</span>, sig, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">signal</span>(<span class="number">2</span>, func); </span><br><span class="line">    <span class="built_in">signal</span>(<span class="number">15</span>, func1);  </span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;i = %d\n&quot;</span>, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实验介绍：主程序循环打印循环数，循环间隔1秒。定义两个信号处理函数，分别捕捉信号2和15。信号2处理函数循环打印带信号值的循环数，循环间隔一秒；信号15处理函数循环打印带信号值的循环数，循环间隔一秒。</p>
+<p>实验步骤：执行实验函数后，先在终端内执行<code>killall -2 e2</code>，然后快速执行<code>killall -15 e2</code>。</p>
+<p>实验观察：由下图实验结果可以看到，在执行信号2处理函数时发生中断，转去执行信号15的处理函数，其执行完毕后再回到中断处继续执行信号2处理函数。</p>
+<p><img src="https://s2.loli.net/2022/03/25/lRvyoQtXLpJNc1V.png" alt="signal.png"></p>
+<h3 id="2、验证3"><a href="#2、验证3" class="headerlink" title="2、验证3"></a>2、验证3</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;signal.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(<span class="type">int</span> sig)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;func 收到了信号 %d。\n&quot;</span>, sig);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;(%d)i = %d\n&quot;</span>, sig, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func1</span><span class="params">(<span class="type">int</span> sig)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;func1 收到了信号 %d。\n&quot;</span>, sig);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;(%d)i = %d\n&quot;</span>, sig, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">signal</span>(<span class="number">2</span>, func); </span><br><span class="line">    <span class="built_in">signal</span>(<span class="number">15</span>, func1);  </span><br><span class="line"></span><br><span class="line">    <span class="type">sigset_t</span> set; <span class="comment">// 定义一个信号集</span></span><br><span class="line">    <span class="built_in">sigemptyset</span>(&amp;set); <span class="comment">// 初始化信号集</span></span><br><span class="line">    <span class="built_in">sigaddset</span>(&amp;set, <span class="number">15</span>); <span class="comment">// 将15加入信号集</span></span><br><span class="line">    <span class="comment">// sigfillset(&amp;set); // 将所有的信号加入信号集</span></span><br><span class="line">    <span class="built_in">sigprocmask</span>(SIG_BLOCK, &amp;set, <span class="literal">NULL</span>); <span class="comment">// 阻塞信号集内所有的信号</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; ++i) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;i = %d\n&quot;</span>, i);</span><br><span class="line">        <span class="built_in">sleep</span>(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (i &gt; <span class="number">10</span>) <span class="built_in">sigprocmask</span>(SIG_UNBLOCK, &amp;set, <span class="literal">NULL</span>); <span class="comment">// 在此处重新发送信号</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实验介绍：实验主体程序同验证2，加入了信号阻塞程序。</p>
+<p>实验步骤：执行实验函数后，先在终端内执行<code>killall -2 e2</code>，然后快速执行<code>killall -15 e2</code>。</p>
+<p>实验观察：由下图实验结果可以看到，在执行信号2处理函数时没有发生中断，而是完成处理程序后第10个循环后才去执行阻塞的信号15的处理函数。</p>
+<p><img src="https://s2.loli.net/2022/03/25/Woq1YEpnFUcOkbM.png" alt="signal_1.png"></p>
+<h2 id="三、功能更强的sigaction"><a href="#三、功能更强的sigaction" class="headerlink" title="三、功能更强的sigaction"></a>三、功能更强的sigaction</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">linux</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">signal</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/25/linux%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%B9%8B%E4%BF%A1%E5%8F%B7/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-网络编程之常见问题" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1186,10 +1286,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">c++</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">STL</a>
               </li>
              
@@ -1198,11 +1294,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">二叉树</a>
+                <a href="javascript:void(0)" class="js-tag color4">c++</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">poll</a>
+                <a href="javascript:void(0)" class="js-tag color1">linux</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">signal</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">二叉树</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1210,11 +1314,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">网络编程</a>
+                <a href="javascript:void(0)" class="js-tag color5">poll</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">select</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">网络编程</a>
               </li>
             
             <div class="clearfix"></div>
